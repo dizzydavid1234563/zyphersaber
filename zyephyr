@@ -205,3 +205,6 @@ while true do
 
     game:GetService("RunService").Heartbeat:Wait()
 end
+
+game.Players.LocalPlayer.Character.ChildAdded:Connect(function(c) if c.Name == "BarrageBind" then game:GetService("RunService").Heartbeat:Wait() c:Destroy() end 
+end)
