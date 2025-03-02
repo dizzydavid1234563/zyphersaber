@@ -1,0 +1,207 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+-- Wait for character to load
+if not character then
+    warn("Character not found!")
+    return
+end
+
+local rightArm = character:FindFirstChild("Right Arm")
+local leftArm = character:FindFirstChild("Left Arm")
+
+if not rightArm or not leftArm then
+    warn("Right or Left Arm not found! Ensure this is R6.")
+    return
+end
+
+-- Function to create and attach a blade with proper grip
+local function createBlade(arm, name, positionOffset, rotation)
+    local blade = Instance.new("Part")
+    blade.Name = name
+    blade.BottomSurface = Enum.SurfaceType.Smooth
+    blade.TopSurface = Enum.SurfaceType.Smooth
+    blade.Size = Vector3.new(4, 1, 2)
+    blade.Anchored = false
+    blade.CanCollide = false
+
+    -- Mesh
+    local mesh = Instance.new("SpecialMesh")
+    mesh.Scale = Vector3.new(40, 40, 50)
+    mesh.MeshId = "rbxassetid://3266423688"
+    mesh.TextureId = "rbxassetid://3266452949"
+    mesh.MeshType = Enum.MeshType.FileMesh
+    mesh.Parent = blade
+
+    -- Motor6D for attachment
+    local motor = Instance.new("Motor6D")
+    motor.Part0 = arm
+    motor.Part1 = blade
+    motor.Parent = arm
+
+    -- Adjust position & rotation
+    motor.C0 = CFrame.new(positionOffset.X, positionOffset.Y, positionOffset.Z) 
+        * CFrame.Angles(math.rad(rotation.X), math.rad(rotation.Y), math.rad(rotation.Z))
+
+    -- Parent blade to character
+    blade.Parent = character
+end
+
+-- Right Arm Blade (Held Properly)
+createBlade(
+    rightArm, 
+    "Blade of Chaos (Right)", 
+    Vector3.new(0, -1, -1),  -- Moves it into the hand
+    Vector3.new(0, 90, 0)  -- Rotates to point forward
+)
+
+-- Left Arm Blade (Mirrored Grip)
+createBlade(
+    leftArm, 
+    "Blade of Chaos (Left)", 
+    Vector3.new(0, -1, -1),  -- Moves it into the hand
+    Vector3.new(0, 90, 0)  -- Rotates to mirror the right arm
+)
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+local function onBodyVelocityAdded(bodyVelocity)
+    if bodyVelocity:IsA("BodyVelocity") then
+        bodyVelocity.Velocity = Vector3.new(bodyVelocity.Velocity.X, 0, bodyVelocity.Velocity.Z)
+    end
+end
+character.DescendantAdded:Connect(onBodyVelocityAdded)
+
+local moveSet = {
+    punch1 = { animationId = "rbxassetid://10469493270" },
+    punch2 = { animationId = "rbxassetid://10469630950" },
+    punch3 = { animationId = "rbxassetid://10469639222" },
+    punch4 = { animationId = "rbxassetid://10469643643" },
+    move1 = { animationId = "rbxassetid://10468665991" },
+    move2 = { animationId = "rbxassetid://10466974800" },
+    move3 = { animationId = "rbxassetid://10471336737" },
+    move4 = { animationId = "rbxassetid://12510170988" },
+    dash = { animationId = "rbxassetid://10479335397" },
+    ult = { animationId = "rbxassetid://12447707844" },
+    wallcombo = { animationId = "rbxassetid://18716867254" },
+    move5 = { animationId = "rbxassetid://12983333733" }
+}
+
+local replacementMoveset = {
+    punch1 = { animationId = "rbxassetid://15259161390", startingTime = 0, endingTime = 1.5 },
+    punch2 = { animationId = "rbxassetid://18896229321", startingTime = 0, endingTime = 1.8 },
+    punch3 = { animationId = "rbxassetid://15259161390", startingTime = 0, endingTime = 2 },
+    punch4 = { animationId = "rbxassetid://15162694192", startingTime = 0, endingTime = 2.2 },
+    move1 = { animationId = "rbxassetid://140164642047188", startingTime = 6.8, endingTime = 7.97, speed = 1 },
+    move2 = { animationId = "rbxassetid://15145462680 ", startingTime = 0.56, endingTime = 20, speed = 1.4 },
+    move3 = { animationId = "rbxassetid://13376869471", startingTime = 0.3, endingTime = 2.2 },
+    move4 = { animationId = "rbxassetid://15145462680", startingTime = 0, endingTime = 3.5, speed = 1.25 },
+    dash = { animationId = "rbxassetid://17838006839", startingTime = 0, endingTime = 1 },
+    ult = { animationId = "rbxassetid://13499771836", startingTime = 0, endingTime = 3 },
+    wallcombo = { animationId = "rbxassetid://18716867254 ", startingTime = 0.3, endingTime = 9, speed = 1 },
+    move5 = { animationId = "rbxassetid://15145462680", startingTime = 1, endingTime = 10, speed = 0.2 }
+}
+
+local function replaceMoveAnimation(humanoid)
+    humanoid.AnimationPlayed:Connect(function(animation)
+        for moveName, moveData in pairs(moveSet) do
+            if animation.Animation.AnimationId == moveData.animationId then
+                print("Original move detected: " .. moveName)
+
+                -- Get the corresponding replacement animation
+                local replacementAnimation = replacementMoveset[moveName]
+                if not replacementAnimation then return end
+
+                -- Stop all animations before playing the new one
+                for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                    track:Stop()
+                end
+
+                -- Create new animation
+                local anim = Instance.new("Animation")
+                anim.AnimationId = replacementAnimation.animationId
+                local animTrack = humanoid:LoadAnimation(anim)
+                
+                animTrack:Play()
+                animTrack.TimePosition = replacementAnimation.startingTime
+
+                if replacementAnimation.speed then
+                    animTrack:AdjustSpeed(replacementAnimation.speed)
+                end
+
+                local duration = replacementAnimation.endingTime - replacementAnimation.startingTime
+                local adjustedDuration = duration
+                if replacementAnimation.speed then
+                    adjustedDuration = duration / replacementAnimation.speed
+                end
+
+                if adjustedDuration > 60 then
+                    return
+                end
+
+				if replacementAnimation.animationId == "rbxassetid://15145462680" then
+                  if character.CameraRig then
+                    character.CameraRig:Destroy()
+                  end
+
+				  if character.NoRotate then
+                    character.NoRotate:Destroy()
+                  end
+
+				  task.wait(5.6)
+
+				  message = "Soul Slash"
+                  game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(message, "All")
+                end
+
+                wait(adjustedDuration)
+
+                animTrack:Stop()
+
+                break
+            end
+        end
+    end)
+end
+
+if humanoid then
+    replaceMoveAnimation(humanoid)
+end
+
+local textLabel = player.PlayerGui:FindFirstChild("ScreenGui") and player.PlayerGui.ScreenGui:FindFirstChild("MagicHealth") and player.PlayerGui.ScreenGui.MagicHealth:FindFirstChild("TextLabel")
+local hotbarFrame = player.PlayerGui:FindFirstChild("Hotbar"):FindFirstChild("Backpack"):FindFirstChild("Hotbar")
+
+local toolTable = {
+    ["Normal Punch"] = "SLASH",
+    ["Consecutive Punches"] = "Multi slashes",
+    ["Shove"] = "Slash",
+    ["Uppercut"] = "Flying cut"
+}
+
+while true do
+
+    for i = 1, 9 do
+        local baseButton = hotbarFrame:FindFirstChild(tostring(i)) and hotbarFrame[tostring(i)].Base
+        if baseButton then
+            local oldName = baseButton.ToolName.Text
+            local newName = toolTable[oldName]
+            if newName then
+                baseButton.ToolName.Text = newName
+            end
+        end
+    end
+
+    if textLabel and textLabel.Text == "SERIOUS MODE" then
+        local selectedName = "Soul Slash >))"
+        textLabel.Text = ""
+        for i = 1, #selectedName do
+            textLabel.Text = string.sub(selectedName, 1, i)
+            wait(0.1)
+        end
+    end
+
+    game:GetService("RunService").Heartbeat:Wait()
+end
