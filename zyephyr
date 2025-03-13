@@ -208,3 +208,20 @@ end
 
 game.Players.LocalPlayer.Character.ChildAdded:Connect(function(c) if c.Name == "BarrageBind" then game:GetService("RunService").Heartbeat:Wait() c:Destroy() end 
 end)
+
+print("made by d1zzy subscribe to my youtube!")
+
+local Test =  game.ReplicatedStorage.Emotes.VFX.VfxMods.FS.vfx.Aura.HumanoidRootPart.Torso
+
+local test = Test:Clone()
+test.Parent = game.Players.LocalPlayer.Character["HumanoidRootPart"]
+
+
+for _, child in ipairs(test:GetChildren()) do
+	if child:IsA("ParticleEmitter") then
+
+		child.Color = ColorSequence.new(Color3.new(0.0313725, 0.580392, 1)) -- its set to one because its vfx lolo delete if u want
+		child:Emit(15)
+		child.Enabled = true
+	end
+end
